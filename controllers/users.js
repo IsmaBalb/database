@@ -59,23 +59,59 @@ const listUserByID = async (req = request, res = response) =>{
 }
 
 const addUser = async (req = request, res = response) =>{
+    const{
+        username,
+        password,
+        email,
+        name,
+        lastname,
+        phonenumber ='',
+        role_id,
+        is_active = 1
+ } = req.body;
+
+    if(username || !password || !email || !name || !lastname || !phonenumber || !role_id);
+    res.status(400).json({msg: 'missing information'});
+    return;
+
+    const user = [username, password, email, name, lastname, phonenumber, role_id, is_active]
+
     let conn;
 
     try{
         conn = await pool.getConnection();
 
-        const userAdded = await conn.query(usersModel.addRow, [user], (err) =>{
+        const [userExist] = await conn.query(usersModels.getByUsername, [username], (err) =>{
             if(err) throw err;
         })
-        console.log(userAdded);
-        res.json(userAdded);
+        if (usernameExists){
+        res.status(409).son({msg: `username ${username} already exist`});
+            return;
+        }
+
+        const [emailExists] = await conn.query(usersModel.getByEmail, [email], (err) =>{
+            if(err) throw err;
+        })
+        if (emailExists){
+            res.status(409).json({mgs: `Email ${email} already exists`});
+            return;
+        }
+       
+
+        const userAdded = await conn.query(usersModel.addRow, [...user], (err)=>{
+            if(err) throw err;
+        })
+        if(userAdded.affectedRows === 0){
+            throw new Error('User not added');
+        }
+
+        res.json({msg: `User added succesfully`});
+
     }catch(error){
         console.log(error);
         res.status(500).json(error);
-
     }finally{
         if(conn) conn.end();
-
     }
 }
 
