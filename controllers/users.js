@@ -70,10 +70,10 @@ const addUser = async (req = request, res = response) =>{
         is_active = 1
  } = req.body;
 
-    if(username || !password || !email || !name || !lastname || !phonenumber || !role_id);
+    if(!username || !password || !email || !name || !lastname || !role_id){
     res.status(400).json({msg: 'missing information'});
     return;
-
+    }
     const user = [username, password, email, name, lastname, phonenumber, role_id, is_active]
 
     let conn;
@@ -81,10 +81,10 @@ const addUser = async (req = request, res = response) =>{
     try{
         conn = await pool.getConnection();
 
-        const [userExist] = await conn.query(usersModels.getByUsername, [username], (err) =>{
+        const [usernameExist] = await conn.query(usersModel.getByUsername, [username], (err) =>{
             if(err) throw err;
         })
-        if (usernameExists){
+        if (usernameExist){
         res.status(409).son({msg: `username ${username} already exist`});
             return;
         }
