@@ -5,24 +5,25 @@ const pool = require('../db');
 const listUsers = async (req = request, res = response) =>{
     let conn;
 
-    try{
+    try {
         conn = await pool.getConnection();
 
-        const users = await conn.query(usersModel.getALL, (err) =>{
+        const users = await conn.query(usersModel.getALL, (err) => {
             if(err){
                 throw err;
             }
         })
         res.json(users);
-    } catch (error){
+    } catch (error) {
         console.log(error);
         res.status(500).json(error);
     }finally{
         if(conn){
             conn.end();
         }
+            
     }
-    
+   
 }
 
 const listUserByID = async (req = request, res = response) =>{
@@ -34,46 +35,49 @@ const listUserByID = async (req = request, res = response) =>{
         return
     }
 
-    try{
+    try {
         conn = await pool.getConnection();
 
-        const [users] = await conn.query(usersModel.getByID, [id],(err) =>{
+        const [users] = await conn.query(usersModel.getByID, [id],(err) => {
             if(err){
                 throw err;
             }
         })
+  
         if(!users){
             res.status(404).json({msg: `User with ID ${id} not found`});
-            return
+            return;
         }
         res.json(users);
-    } catch (error){
+    } catch (error) {
         console.log(error);
         res.status(500).json(error);
     }finally{
         if(conn){
             conn.end();
         }
+            
     }
-    
+   
 }
 
-const addUser = async (req = request, res = response) =>{
-    const{
+const addUser = async (req = request, res = response) => {
+    const {
         username,
         password,
         email,
         name,
         lastname,
-        phonenumber ='',
+        phonenumber = '',
         role_id,
         is_active = 1
- } = req.body;
+    }= req.body;
 
     if(!username || !password || !email || !name || !lastname || !role_id){
-    res.status(400).json({msg: 'missing information'});
-    return;
+        res.status(400).json({msg: 'Missing information'});
+        return;
     }
+
     const user = [username, password, email, name, lastname, phonenumber, role_id, is_active]
 
     let conn;
@@ -81,31 +85,29 @@ const addUser = async (req = request, res = response) =>{
     try{
         conn = await pool.getConnection();
 
-        const [usernameExist] = await conn.query(usersModel.getByUsername, [username], (err) =>{
+        const [usernameExist] = await conn.query(usersModel.getByUsername, [username], (err) => {
             if(err) throw err;
         })
         if (usernameExist){
-        res.status(409).son({msg: `username ${username} already exist`});
+            res.status(409).json({msg: `Username ${username} already exists`});
             return;
         }
 
-        const [emailExists] = await conn.query(usersModel.getByEmail, [email], (err) =>{
+        const [emailExists] = await conn.query(usersModel.getByEmail, [email], (err) => {
             if(err) throw err;
         })
         if (emailExists){
-            res.status(409).json({mgs: `Email ${email} already exists`});
+            res.status(409).json({msg: `Email ${email} already exists`});
             return;
         }
-       
 
-        const userAdded = await conn.query(usersModel.addRow, [...user], (err)=>{
+        const userAdded = await conn.query(usersModel.addRow, [...user], (err) =>{
             if(err) throw err;
         })
         if(userAdded.affectedRows === 0){
             throw new Error('User not added');
         }
-
-        res.json({msg: `User added succesfully`});
+        res.json({msg: 'User added succesfully'});
 
     }catch(error){
         console.log(error);
@@ -115,4 +117,53 @@ const addUser = async (req = request, res = response) =>{
     }
 }
 
-module.exports = {listUsers, listUserByID, addUser}
+const updateUser = async (req = request, res = response) =>{
+    //pendiente
+}
+
+const deleteUser = async (req = request, res = response) =>{
+    let conn;
+    const {id} = req.params;
+
+    try {
+        conn = await pool.getConnection();
+        
+        const [userExists] = await conn.query(usersModel.getByID, [id], (err) => {
+            if(err) throw err;
+
+        }
+
+        );
+
+        if(!userExists || userExists.is_active === 0){
+            res.status(404).json({msg: `user with ID ${id} not found`});
+            return
+        }
+
+        const userDeleted = await conn.query(
+            usersModel.deleteRow, [id], (err) =>{
+                if (err) throw err;
+            }
+        );
+
+        if(userDeleted.affectedRows === 0) {
+            throw new Error('User not deleted');
+        }
+
+        res.json({msg: 'User deleted succesfully'});
+
+    }catch (error) {
+        console.log(error);
+        res.status(500).json(error);
+    
+    }finally{
+        if(conn) conn.end();
+    }
+
+  
+}
+
+module.exports = {listUsers, listUserByID, addUser, deleteUser}
+
+
+//  routes  -  controllers     -   models(BD)

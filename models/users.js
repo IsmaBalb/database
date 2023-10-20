@@ -48,6 +48,17 @@ const usersModel = {
                            ?,?,?,?,?,?,?,?
                          )
                          `,
+     updateRow:`,
+          pendiente
+     `,
+      deleteRow: `  
+               UPDATE
+                Users
+               SET
+                is_active = 0
+               WHERE
+                  id = ?    
+     `,                          
   }
   
   module.exports = usersModel;
